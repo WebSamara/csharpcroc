@@ -1,4 +1,6 @@
 ﻿using System;
+using System.IO;
+using System.Net;
 using Telegram.Bot;
 
 namespace CShapTelegramBot
@@ -27,8 +29,41 @@ namespace CShapTelegramBot
         /// <param name="e"></param>
         private void MessageProc(object sender, Telegram.Bot.Args.MessageEventArgs e)
         {
-            client.SendTextMessageAsync(e.Message.Chat.Id, "Привет!)");
-            Console.WriteLine(e.Message.Text);
+            switch (e.Message.Type)
+            {
+                case Telegram.Bot.Types.Enums.MessageType.Text:
+                    Console.WriteLine(e.Message.Text);
+                    client.SendTextMessageAsync(e.Message.Chat.Id, "Ты отправил мне сообщение");
+                    break;
+                case Telegram.Bot.Types.Enums.MessageType.Document:
+                    client.SendTextMessageAsync(e.Message.Chat.Id, "Ты отправил мне файл и я его сохранил :)");
+                    DownloadFile(e.Message.Document.FileId, $@"C:\doc\{e.Message.Document.FileName}");
+                    break;
+                case Telegram.Bot.Types.Enums.MessageType.Photo:
+                    client.SendTextMessageAsync(e.Message.Chat.Id, "Ты отправил мне фото");
+                    break;
+
+                default:
+                    Console.WriteLine(e.Message.Type);
+                    client.SendTextMessageAsync(e.Message.Chat.Id, "Я хз что это");
+                    break;
+            }
+        }
+
+        private async void DownloadFile(string fileId, string path)
+        {
+            try
+            {
+                var file = await client.GetFileAsync(fileId);
+                FileStream fileStream = new FileStream(path, FileMode.Create);
+                await client.DownloadFileAsync(file.FilePath, fileStream);
+                fileStream.Close();
+                fileStream.Dispose();
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("Error downloading: " + ex.Message);
+            }
         }
 
         /// <summary>
