@@ -7,6 +7,7 @@ namespace CShapTelegramBot
 {
     /// <summary>
     /// Основной модуль бота
+    /// [!] Файл назывался Class1 - переименовал по имени класса
     /// </summary>
     public class Bot
     {
@@ -36,6 +37,9 @@ namespace CShapTelegramBot
                     client.SendTextMessageAsync(e.Message.Chat.Id, "Ты отправил мне сообщение");
                     break;
                 case Telegram.Bot.Types.Enums.MessageType.Document:
+                    // [!] Я бы поменял местами сообщение и загрузку файла
+                    // иначе получается, что мы уже доложили о том, что все хорошо,
+                    // а потом может быть ошибка
                     client.SendTextMessageAsync(e.Message.Chat.Id, "Ты отправил мне файл и я его сохранил :)");
                     DownloadFile(e.Message.Document.FileId, $@"C:\doc\{e.Message.Document.FileName}");
                     break;
@@ -55,10 +59,15 @@ namespace CShapTelegramBot
             try
             {
                 var file = await client.GetFileAsync(fileId);
-                FileStream fileStream = new FileStream(path, FileMode.Create);
-                await client.DownloadFileAsync(file.FilePath, fileStream);
-                fileStream.Close();
-                fileStream.Dispose();
+                // [!] Можно использовать using:
+
+                using (FileStream fileStream = new FileStream(path, FileMode.Create))
+                {
+                    await client.DownloadFileAsync(file.FilePath, fileStream);
+                }
+                // [!] И тогда Close/Dispose уже не нужно
+                // fileStream.Close();
+                // fileStream.Dispose();
             }
             catch (Exception ex)
             {
